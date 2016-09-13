@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <META HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+    <title>Caas</title>
+    <link rel="stylesheet" type="text/css" href="themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="themes/color.css">
+    <link rel="stylesheet" type="text/css" href="demo/demo.css">
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.easyui.min.js"></script>
+    <script type="text/javascript">
+    var alldata = []  ; 
+    var hasPort = new Array() ; 
+     /* 将已用port 缓存*/
+     function cachePort(port){
+        var strPort = hasPort.join(","); 
+        if(strPort.indexOf(port) != -1 ){
+            return  ;
+        }else{
+            hasPort.push(port);
+        }
+
+     }
+
+      function checkP(){
+
+         
+         /**$.ajax({
+                url: url+getpods, 
+                type:"get",
+                dataType:"json",
+                async:true,
+                success: function(data){
+
+                    $.each(data.items,function(i,item){
+
+                            if(item.spec.containers != undefined &&  item.spec.containers[0].ports != undefined ){
+                                $.each(item.spec.containers,function(j,item){
+                                     $.each(item.ports,function(k,item){
+                                            cachePort(item.hostPort);
+                                    });
+
+                                });
+
+                            }
+                    });
+
+
+
+                },
+                error:function(){
+                    alert("获取POD时服务器异常，请刷新页面重试!") ; 
+                }
+            });**/
+
+      }
+
+        // onclick-RC-Row
+        function loadPodByLable(index,row){
+            alldata=[]; 
+            $.ajax({
+                url: url+getpods+"?labelSelector=name="+row.rclable, 
+                type:"get",
+                dataType:"json",
+                async:false, 
+                success: function(data){
+                    $.each(data.items,function(i,item){
+                        var drow = {};
+                        //item.metadata.name
+                        //item.metadata.uid
+                        //item.status.phase
+                        //item.status.startTime
+
+                        /**$.each(item.status.containerStatuses,function(j,item){
+                          alert(item.name)  
+                        })**/
+
+                        drow.name = item.metadata.name ; 
+                        drow.status = item.status.phase ; 
+                        drow.starttime = item.status.startTime ;
+                        var hostip = item.status.hostIP;                     
+                        var containerip =item.status.podIP;
+//alert(item.spec.containers[0].ports);
+                        if(item.spec.containers[0].ports != undefined ){
+
+
+                            var temphostip = "" ; 
+                            var tempContain = "" ;
+                            $.each(item.spec.containers[0].ports,function(j,item){
+
+                                //alert(item.hostPort) 
+                                
+                                //sport = item.spec.containers[0].ports[0].hostPort ; 
+                                temphostip += hostip + ":" + item.hostPort +"</br>" ; 
+
+                                tempContain += containerip + ":"+ item.containerPort +"</br>"; 
+                            })
+
+                             
+                            
+                           
+                             //dport = item.spec.containers[0].ports[0].containerPort ;
+
+                             //tempContain = containerip + ":" + dport ; 
+
+                             drow.containerip = tempContain ;
+                             drow.hostip  = temphostip ;
+
+                        }else{
+                            drow.hostip  = hostip ;
+                            drow.containerip = containerip ; 
+                        }
+                        alldata.push(drow) ;
+
+                    });
+
+                },
+                error:function(){
+                    alert("获取POD时服务器异常，请刷新页面重试!,请求地址=="+url+getpods+"?labels=name="+row.rclable);
+                }
+            });
+
+
+            $('#dg').datagrid({
+              data:alldata,
+              onClickRow:loadPodDetailByName,   
+              /**data: [
+            {name:'value11', status:'value12',starttime:"2015-09-28T10:59:20Z"},
+            {name:'value11', status:'value12',starttime:"2015-09-28T10:59:20Z"},
+                ]**/
+            });
+
+        }
+      
+       function loadPodDetailByName(){
+
+
+       }
+
+        /** 创建RC **/
+        function newRC(){
+              $('#dlg').dialog('open').dialog('center').dialog('setTitle','创建一个服务');
+              $('#fm').form('clear');
+
+              /**ports =  $('input[name*="cspor"]') ; 
+              for (var i = 0 ; i<ports.length ; i++) {
+                 ports[i].bind('blur',checkPort()) ;
+              }**/
+        }
+
+
+        function GetJsonData(namespace,name,replicas,selector,image,sport,dport,commandline,args){
+
+            var sshport = 8000 ;  
+
+            var RC =  {
+
+                  "kind": "ReplicationController",
+                  "apiVersion": "v1",
+                  "metadata": {
+                    "name": name,
+                    "namespace": namespace,
+                  },
+                  "spec":{
+                      "replicas":replicas,
+                      "selector":{
+                         "name":selector
+                    },
+                  "template":{
+                     "metadata":{
+                     "namespace": namespace,
+                        "labels":{
+                           "name":selector
+                        }
+                     },
+                     "spec":{
+                        "volumes": [
+                                {   
+                                "name": "nfs",
+                                "hostPath": {"path": "/mnt/nfs"}
+                                }   
+                            ],  
+                        "containers":[
+                           {
+                              "name":name,
+                              "image":image,
+                            /**"command": [
+                              commandline
+                            ],
+                            "args": [
+                              args
+                            ],**/
+                              "ports": [
+                                  {   
+                                    "hostPort": sport,
+                                    "containerPort":dport, 
+                                    "protocol": "TCP"
+                                  },
+                                  {   
+                                    "hostPort": sshport,
+                                    "containerPort":22, 
+                                    "protocol": "TCP"
+                                  }
+                                ],
+                                "volumeMounts": [
+                                     {
+                                        "name": "nfs",
+                                        "readOnly": false,
+                                        "mountPath": "/mnt"
+                                    }
+                                ],
+                           }
+                        ]
+                     }
+                  },
+
+               }
+            } /*end RC */
+               
+            return RC ;
+        }
+
+
+    function saveRC(){
+              a = $("#fm").form('validate');
+
+              if(!a){
+                alert("必填项目没有填写或者值有误,请检查后重新提交!");
+                return  ; 
+              } 
+
+
+                var name      = $("input[name='cname']").val();
+                //这里先采用selector = rcname的方式，不让用户自己定义selector
+                var selector  =  name ;/**$("input[name='clable']").val();**/
+                var replicas  = parseInt($("input[name='cnum']").val());
+                var image     = $("input[name='cimage']:checked").val();
+                var namespace = "default" ;
+
+                var sport     = parseInt($("input[name='csport']").val());
+                var dport     = parseInt($("input[name='cdport']").val());
+
+                 if(!checkPort(sport)){
+                    return ;   
+                 };
+
+                var sport1     = parseInt($("input[name='csport1']").val());
+                var dport1     = parseInt($("input[name='cdport1']").val());
+
+                var sport2     = parseInt($("input[name='csport2']").val());
+                var dport2     = parseInt($("input[name='cdport2']").val());
+                
+        
+                var args     = $("input[name='cargs']").val();
+
+                var commandline = "" ; 
+                //当args有值时，commandline 才能出现
+                if( !args  == "" ) {
+                //这里预留 image 与 commdline 的映射关系
+                    if(image == "memcache") {
+                        commandline = ""  ; 
+                    }else if(image == "redis"){ 
+                        commandline = ""  ;
+                    }
+               }
+
+
+                RC =  GetJsonData(namespace,name,replicas,selector,image,sport,dport,commandline,args);
+
+
+                if( (!sport1 == "" && sport1 != 'NaN' )  && (!dport1 == "" && dport1 != 'NaN' ) ){
+
+                    if(!checkPort(sport1)){
+                        return ;   
+                    }
+
+//alert(sport1);
+                    s1dport = {
+                        "hostPort": sport1,
+                        "containerPort": dport1,
+                        "protocol": "TCP",
+                    };
+
+                   RC.spec.template.spec.containers[0].ports[2] = s1dport ; 
+                   //cachePort(sport1);
+        
+                }
+
+                if( (!sport2 == "" && sport2 != 'NaN' )  && (!dport2 == "" && dport2 != 'NaN' ) ){
+                     if(!checkPort(sport2)){
+                        return ;   
+                     }
+//alert(sport1);
+                    s2dport = {
+                        "hostPort": sport2,
+                        "containerPort": dport2,
+                        "protocol": "TCP",
+                    };
+
+                   RC.spec.template.spec.containers[0].ports[3] = s2dport ; 
+                    //cachePort(sport2);
+                }
+
+                //动态添加进去 commandline 及 args   command  agrs
+                /**if( !args  == "" ) {
+                    RC.spec.template.spec.containers[0].command[0] = commandline ; 
+                    RC.spec.template.spec.containers[0].args[0] = args ; 
+                {**/
+
+
+ 
+//alert(RC.spec.template.spec.containers[0].ports[2].hostPort)
+                //namespace = $("input[name='cnamespaces']").val();
+
+    /**alert(RC.metadata.name) ;
+    alert(RC.spec.replicas) ;
+    alert(RC.spec.selector.name) ;
+    alert(RC.spec.template.metadata.namespace) ;
+    alert(RC.spec.template.spec.containers[0].name) ;
+    alert(RC.spec.template.spec.containers[0].image) ;
+  
+alert(RC.spec.template.spec.containers[0].ports[0].hostPort) ;
+  **/
+                  $.ajax({
+                    url: url+get_rc, 
+                    type:"post",
+                    dataType:"json",
+                    contentType: "application/json; charset=utf-8",
+                    async:false, 
+                    data: JSON.stringify(RC),
+                    success: function(data){
+                         alert("创建成功!");
+                         $('#dlg').dialog('close'); 
+                         loadRC();
+                         $('#rc').datagrid('reload');
+                    },
+                    error:function(){
+                        alert("创建RC异常!");
+                    }
+                });
+                 
+                return RC  ;
+
+            }
+
+
+            function delRC(){
+
+                var row = $('#rc').datagrid('getSelected');
+
+                if (row){
+                    $.messager.confirm('Confirm','你确定要销毁吗?',function(r){
+                      //del rc 
+                        $.ajax({
+                            url: url+get_rc+"/"+row.rcname,
+                            type:"DELETE",
+                            dataType:"json",
+                           // async:true, 
+                            success: function(data){
+                               alert("删除成功!");  
+                               loadRC();                        
+                               $('#rc').datagrid('reload');
+                            },
+                            error:function(){
+                                alert("删除RC时服务器异常，请刷新页面重试!");
+                            }
+                        });//del rc end 
+
+                       //del  pod    
+                         $.each(alldata,function(k,v){                 
+                            $.ajax({
+                                    url: url+getpods+"/"+v.name,
+                                    type:"DELETE",
+                                    dataType:"json",
+                                   // async:true, 
+                                    success: function(data){
+                                        alldata = []  ;
+                                         $('#dg').datagrid({
+                                                  data:alldata,
+                                                  onClickRow:loadPodDetailByName,   
+                                        });
+                                    },
+                                    error:function(){
+                                        alert("删除POD"+v.name+"时异常！");
+                                    }
+                                });
+
+                        });//del pod end 
+
+
+                     });
+                     
+                  }
+            }
+            
+
+        function loadRC(){
+            rc_data = [] ;
+            $.ajax({ 
+                url: url+get_rc, 
+                type:"get",
+                dataType:"json",
+                async:false, 
+                success: function(data){
+
+                    $.each(data.items,function(i,item){
+                        var drow = {};
+                        drow.rcname = item.metadata.name ; 
+                        drow.rcnum = item.spec.replicas ; 
+                        drow.rclable = item.metadata.labels.name ;
+                        $.each(item.spec.template.spec.containers,function(j,item){
+                            drow.rcimage = item.image ; 
+
+                        })
+
+                        rc_data.push(drow) ;
+
+                    });
+
+
+                    $('#rc').datagrid({
+                          data:rc_data,
+                          onClickRow:loadPodByLable,                    
+                         });
+
+                },
+                error:function(){
+                    alert("请求RC时服务器异常!");
+                }
+            });
+        }
+
+        /*检查port 是否已经使用*/
+        function checkPort(sport){
+
+            /**var strPort = hasPort.join(",");       
+            if(strPort.indexOf(sport) != -1 ) {
+                alert(sport+" 已使用,请更换端口.");
+                return false;
+            }
+            **/
+            return true ;
+      
+
+            
+       }
+
+        function addPort(){
+            var fm  = $("#port") ;
+            $('<div/>',{ 
+            id:'test1', 
+            "class":"fitem", 
+            }).appendTo(fm); 
+
+            /**$("<label>源:目标端口</label>").appendTo($("#test1"));
+
+                        $('<input />',{ 
+            type:"text", 
+            name:"aaa",
+            class:"easyui-numberbox",
+            width:"60px",
+            }).appendTo($("#test1")); 
+
+            $(":").appendTo($("#test1"));
+
+             $('<input />',{ 
+            type:"text", 
+            name:"bbb",
+            class:"easyui-numberbox",
+            width:"60px",
+            }).appendTo($("#test1")); **/
+         
+            $("<span class=\"textbox textbox-invalid numberbox\" style=\"width: 68px; height: 20px;margin-left: 82px;\"><input name=\"csport\" class=\"textbox-text validatebox-text textbox-prompt validatebox-invalid\"  min=\"1024\" max=\"65535\" required style=\"width: 60px;border-color: #ffa8a8;\"></span> : <span class=\"textbox textbox-invalid numberbox\" style=\"width: 68px; height: 20px;\"><input name=\"cdport\" class=\"textbox-text validatebox-text textbox-prompt validatebox-invalid\"   min=\"1\" max=\"65535\" required style=\"width: 60px\"></span><br>").appendTo($("#test1"));
+            
+        }
+
+
+    </script>
+    <script type="text/javascript">
+
+    var ns_     = "default"
+    //var url     = "http://10.2.33.10:8001" ;
+    //var url     = "http://172.30.10.185:8080" ;
+    var url     = "http://172.30.10.185:6800" ;
+    var get_rc  = "/api/v1/namespaces/"+ns_+"/replicationcontrollers" 
+    var getpods = "/api/v1/namespaces/"+ns_+"/pods" ;
+ 
+    var rc_data=[];
+
+    $(function(){
+
+        loadRC();
+        checkP();
+
+    }); 
+                
+    </script>           
+    
+</head>
+<body>
+    <h2>服务列表</h2>
+
+    <table id="rc" title="服务情况" class="easyui-datagrid" style="width:870px;height:400px"
+            url=""
+            toolbar="#rctoolbar" pagination="false"
+            rownumbers="true" fitColumns="true" singleSelect="true" >
+        <thead>
+            <tr>
+                <th field="rcname" width="80">服务名称</th>
+                <th field="rcnum" width="25" align="center">服务数量</th>
+                <th field="rcimage" width="290">模板</th>
+                <th field="rclable" width="60">标签</th>
+            </tr>
+        </thead>
+    </table>
+    <div id="rctoolbar">
+        <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newRC()">新建服务</a>
+        <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="delRC()">删除服务</a>
+        <!--a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit">edit</a-->
+    </div>
+
+    <p></p>
+
+    <!--center-->
+    <table id="dg" title="实例情况" class="easyui-datagrid" style="width:800px;height:200px"
+            url=""
+            toolbar="#toolbar" pagination="false"
+            rownumbers="true" fitColumns="true" singleSelect="true">
+        <thead>
+            <tr>
+                <th field="name" width="120">名称</th>
+                <th field="status" width="40" align="center">状态</th>       
+                <th field="hostip" width="100" align="center">主机IP:源端口</th>        
+                <th field="containerip" width="100" align="center">实例IP:目标端口</th>
+                <th field="starttime" width="90">运行时间</th>
+            </tr>
+        </thead>
+    </table>
+  
+    <div id="toolbar">
+        <!--a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newUser()">新建容器</a-->
+    </div>
+    
+    <div id="dlg" class="easyui-dialog" style="width:670px;height:480px;padding:10px 20px"
+            closed="true" buttons="#dlg-buttons">
+        <div class="ftitle">新建服务信息</div>
+        <form id="fm" method="post" data-options="novalidate:true" style="float: left;">
+            <div class="fitem">
+                <label>名称</label>
+                <input name="cname" class="easyui-validatebox" validType="length[0,30]" invalidMessage="必须填写！"  data-options="required:true" >
+            </div>
+            <!--div class="fitem">
+                <label>标签</label>
+                <input name="clable" class="easyui-textbox" required>
+            </div-->
+            <div class="fitem">
+                <label>服务数量</label>
+                <input name="cnum" class="easyui-numberbox"   min="1" max="5" required>
+            </div>
+            <div id="port">
+            <div class="fitem" id = "pport">
+                <label>源:目标端口</label>
+                <input name="csport" class="easyui-numberbox"   min="1024" max="65535" required style="width: 70px" > :
+                <input name="cdport" class="easyui-numberbox"   min="1" max="65535" required style="width: 70px"> </br>
+                <label></label>
+                <input name="csport1" class="easyui-numberbox"   min="1024" max="65535"  style="width: 70px;"> :
+                <input name="cdport1" class="easyui-numberbox"   min="1" max="65535"  style="width: 70px"></br>
+                <label></label>
+                 <input name="csport2" class="easyui-numberbox"   min="1024" max="65535"  style="width: 70px" > :
+                <input name="cdport2" class="easyui-numberbox"   min="1" max="65535"  style="width: 70px">
+
+            <!--a href="javascript:addPort();">添加端口</a-->
+            </div>
+
+            </div>
+            <div>
+            	 <label>模板</label>           
+                 		<div style="padding:10px">
+                        <input type="radio" name="cimage"  value="xa.repo.ndp.com:5000/paas/zookeeper"><span>zookeeper</span><br/>
+                        <input type="radio" name="cimage" value="172.30.10.185:5000/paas/memcached"><span>memecache</span><br/>
+                        <input type="radio" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-jdk1.7-redis"><span>redis</span><br/>
+                        <input type="radio" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-mysql"><span>mysql</span><br/> 
+                        <input type="radio" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-nginx"><span>nginx</span><br/>
+                        <input type="radio" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-jdk1.7-resin-s3-apache-tomcat7"><span>dev</span><br/>
+                         <input type="radio" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-jdk:1.8"><span>jdk1.8</span><br/>
+                        </div>
+            </div>
+            <div class="fitem">
+                 <label>启动参数</label>           
+                         <input name="cargs" class="easyui-validatebox"  ><br/>    
+            </div>
+            <input id="cnamespaces" name="cnamespaces" value="default" type="hidden"></input>
+        </form>
+
+        <!--说明信息-->
+        <div style="float: right;z-index: 2;padding: 10px;border:1px dashed #81927F; ">    
+            <label>模板说明</label>    
+            <p>源:目标端:比如你要实例的tomcat(8080) 映射到主机<br> 的 9000端口访问，那么就写9000:8080</p>
+            <label>模板说明</label>    
+            <p>dev:包括：jdk1.7 resin s3 apache</p>
+        </div>
+
+    </div>
+    <div id="dlg-buttons">
+        <a href="javascript:void(0)" class="easyui-linkbutton c6" iconCls="icon-ok" onclick="saveRC()" style="width:90px">提交</a>
+        <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg').dialog('close')" style="width:90px">取消</a>
+    </div>
+    
+    <style type="text/css">
+        #fm{
+            margin:0;
+            padding:10px 30px;
+        }
+        .ftitle{
+            font-weight:bold;
+            padding:5px 0;
+            margin-bottom:10px;
+            border-bottom:1px solid #ccc;
+        }
+        .fitem{
+            margin-bottom:5px;
+        }
+        .fitem label{
+            display:inline-block;
+            width:80px;
+        }
+        .fitem input{
+            width:160px;
+        }
+    </style>
+</body>
+</html>
