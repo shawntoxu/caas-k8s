@@ -21,9 +21,9 @@ NAMESPACE='test-vision'
 #SERVER='54.169.163.160'
 SERVER='172.30.10.122'
 SERVER_URL='http://%s:8080'
-out_rc_url='/api/v1/namespaces/'+NAMESPACE+'/replicationcontrollers'
-out_pod_url='/api/v1/namespaces/'+NAMESPACE+'/pods'
-rc_name_url='/api/v1/namespaces/'+NAMESPACE+'/replicationcontrollers/<rc_name>'
+out_rc_url='/api/v1/namespaces/<namespace>/replicationcontrollers'
+out_pod_url='/api/v1/namespaces/<namespace>/pods'
+rc_name_url='/api/v1/namespaces/<namespace>/replicationcontrollers/<rc_name>'
 port_url='/api/v1/ports/'
 is_port_url='/api/v1/ports/<int:port>'
 
@@ -84,7 +84,7 @@ def resent_req(url,method):
     if method == 'GET':
         para = request.args
         r = requests.get(url,params=para)
-        #print "GET input para%s" % para
+        print "GET input para%s" % para
     elif method == 'POST':
         para = request.data
         r = requests.post(url,data=para)
@@ -173,8 +173,10 @@ def is_port(port):
         return "False"
 
 @app.route(out_rc_url, methods=['GET', 'POST', 'DELETE'])
-def list_rc():
+def list_rc(namespace=None):
     url = (SERVER_URL + out_rc_url) % SERVER
+    url=url.replace('<namespace>',namespace)
+    print url 
     if request.method == 'DELETE':
         return delete_rc
     elif request.method == 'POST':
@@ -190,19 +192,21 @@ def list_rc():
     return resent_req(url, request.method)
 
 @app.route(rc_name_url, methods=['GET', 'POST', 'DELETE'])
-def op_rc(rc_name):
+def op_rc(namespace=None,rc_name=None):
     url = (SERVER_URL + out_rc_url + "/%s") % (SERVER,rc_name)
+    url=url.replace('<namespace>',namespace)
     if request.method == 'DELETE':
         return delete_rc(url, rc_name)
     return resent_req(url, request.method)
 
 @app.route(out_pod_url)
-def get_pod():
+def get_pod(namespace=None):
     url = (SERVER_URL + out_pod_url) % SERVER
+    url=url.replace('<namespace>',namespace)
     return resent_req(url, request.method)
 
 if __name__ == '__main__':
     load_ports()
     #app.run(host='0.0.0.0',port=8100,debug=True)
-    app.run(host='0.0.0.0',port=6800,debug=False)
+    app.run(host='0.0.0.0',port=6800,debug=True)
 
