@@ -11,10 +11,21 @@
     <script type="text/javascript" src="/static/jquery.min.js"></script>
     <script type="text/javascript" src="/static/jquery.easyui.min.js"></script>
     <script type="text/javascript">
+    
     //  pod 数据绑定变更量
     var alldata = []  ; 
     var hasPort = new Array() ; 
+    
+     function openWin(src, width, height, showScroll){   
+      //window.showModalDialog (src,"","location:No;status:No;help:No;dialogWidth:"+width+";dialogHeight:"+height+";scroll:"+showScroll+";");   
+     var iWidth = width;
+var iHeight = height;
+var iTop = (window.screen.availHeight - 30 - iHeight) / 2;
+var iLeft = (window.screen.availWidth - 10 - iWidth) / 2;
+var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight + ",top=" + iTop + ",left=" + iLeft + ",toolbar=no, menubar=no, scrollbars=no, resizable=no,location=no, status=no,alwaysRaised=yes,depended=yes");
+    }     
 
+ 
      /* 将已用port 缓存*/
      function cachePort(port){
         var strPort = hasPort.join(","); 
@@ -81,6 +92,7 @@
                         drow.status = item.status.phase ; 
                         var hostip = item.status.hostIP;                     
                         var containerip =item.status.podIP;
+			//var containerID = (item.status.containerStatuses[0].containerID).split("//") ; 
                         //运行状态可以查看资源使用情况 cadvisitor
                         if(item.status.phase == "Running"){
                           cid =  (item.status.containerStatuses[0].containerID).split("//") ; 
@@ -89,6 +101,9 @@
                           drow.name = "<a title=\"打开查看资源状态\" href="+resURL+">" + item.metadata.name +"<\/a>" ;
                           //采用frame 同一页面展现
                           //drow.name = "<a  href=javascript:setFrameSrc('"+resURL+"')>" + item.metadata.name +"<\/a>" ;
+                          consoleURL = "http://"+hostip+":21888/terminal/"+cid[1] 
+                          //consoleURL = consoleURL,'500px','400px','no')"
+                          containerip="<div onclick=openWin('"+consoleURL+"','500px','400px','no')>"+containerip+"<\/div>"
                         }
 
                         drow.starttime = item.status.startTime ;
@@ -550,10 +565,16 @@
 
     </script>
     <script type="text/javascript">
-
-    var ns_     = "default"
+    //default ns
+    //var ns_     = "default"
+    var ns_     = "test-vision"
+    //var ns_     = "image-server"
     var url     = "http://172.30.80.127:6800" ;
     //var url     = "http://10.7.0.1:6800" ;
+	    
+    //var get_rc  = "/api/v1/namespaces/image-server/replicationcontrollers"
+   
+    
     var get_rc  = "/api/v1/namespaces/"+ns_+"/replicationcontrollers" 
     var getpods = "/api/v1/namespaces/"+ns_+"/pods" ;
     var getport = "/api/v1/ports/";
@@ -577,6 +598,8 @@
 <body>
      <!--k8s 自带dashboard地址 -->
     <div><h2>服务列表 <p><a href="http://xxxx:8001/static/app/#/dashboard/">查看节点资源使用情况</a></p></h2></div>
+    <div><a href="#" onclick="openWin('http://172.30.80.215:21888/terminal/65640d338bfa','500px','400px','no')">GoRemoteConsole</a></div>
+    <div><a href="#" onclick="openWin('http://172.30.80.127:21888/terminal/56523078caee','600px','500px','no')">GoRemoteConsole2</a></div>
 
     <table id="rc" title="服务情况" class="easyui-datagrid" style="width:800px;height:400px"
             url=""

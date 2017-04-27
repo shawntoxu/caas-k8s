@@ -14,11 +14,16 @@ import requests
 app = Flask(__name__)
 
 #SERVER='172.30.10.185'
+#NAMESPACE='image-server'
+NAMESPACE='test-vision'
+
+#SERVER='10.2.33.10'
+#SERVER='54.169.163.160'
 SERVER='172.30.10.122'
 SERVER_URL='http://%s:8080'
-out_rc_url='/api/v1/namespaces/default/replicationcontrollers'
-out_pod_url='/api/v1/namespaces/default/pods'
-rc_name_url='/api/v1/namespaces/default/replicationcontrollers/<rc_name>'
+out_rc_url='/api/v1/namespaces/'+NAMESPACE+'/replicationcontrollers'
+out_pod_url='/api/v1/namespaces/'+NAMESPACE+'/pods'
+rc_name_url='/api/v1/namespaces/'+NAMESPACE+'/replicationcontrollers/<rc_name>'
 port_url='/api/v1/ports/'
 is_port_url='/api/v1/ports/<int:port>'
 
@@ -198,6 +203,6 @@ def get_pod():
 
 if __name__ == '__main__':
     load_ports()
-    app.run(host='0.0.0.0',port=6800,debug=True)
-    #app.run(host='172.30.10.185',port=6800,debug=False)
+    #app.run(host='0.0.0.0',port=8100,debug=True)
+    app.run(host='0.0.0.0',port=6800,debug=False)
 
