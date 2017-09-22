@@ -10,25 +10,21 @@
     <link rel="stylesheet" type="text/css" href="/static/demo/demo.css">
     <script type="text/javascript" src="/static/jquery.min.js"></script>
     <script type="text/javascript" src="/static/jquery.easyui.min.js"></script>
-    <script type="text/javascript">
-    
-    //  pod 数据绑定变更量
-    var alldata = []  ; 
-    var hasPort = new Array() ; 
-    
-     function openWin(src, width, height, showScroll){   
-      //window.showModalDialog (src,"","location:No;status:No;help:No;dialogWidth:"+width+";dialogHeight:"+height+";scroll:"+showScroll+";");   
-     var iWidth = width;
-var iHeight = height;
-var iTop = (window.screen.availHeight - 30 - iHeight) / 2;
-var iLeft = (window.screen.availWidth - 10 - iWidth) / 2;
-var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight + ",top=" + iTop + ",left=" + iLeft + ",toolbar=no, menubar=no, scrollbars=no, resizable=no,location=no, status=no,alwaysRaised=yes,depended=yes");
-    }     
+    <!--<script type="text/javascript">-->
+        <!--console.log(" debug == = " + window.location.href);-->
+<!--//        window.location.replace("")  ;-->
+        <!--history.pushState("", "", "web.html");-->
+    <!--</script>-->
 
- 
+
+    <script type="text/javascript">
+    //  pod 数据绑定变更量
+    var alldata = []  ;
+    var hasPort = new Array() ;
+
      /* 将已用port 缓存*/
      function cachePort(port){
-        var strPort = hasPort.join(","); 
+        var strPort = hasPort.join(",");
         if(strPort.indexOf(port) != -1 ){
             return  ;
         }else{
@@ -36,7 +32,6 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
         }
 
      }
-
 
       function checkP(){
 
@@ -72,60 +67,58 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
       function setFrameSrc(src){
        iframe =  $("#podRes");
-       iframe.attr("src",src);  
-
+       iframe.attr("src",src);
       }
         // onclick-RC-Row
-        function loadPodByLable(index,row){
-         //cadvisitor 监控url地址
+      function loadPodByLable(index,row){
          podstatusURI =  ":4194/containers/docker/";
-            alldata=[]; 
+            alldata=[];
+            api = url+getpods.replace("default",row.namespace)+"?labelSelector=name="+row.rclable ;
             $.ajax({
-                url: url+getpods+"?labelSelector=name="+row.rclable, 
+                url: api,
                 type:"get",
                 dataType:"json",
-                async:false, 
+                async:false,
                 success: function(data){
                     $.each(data.items,function(i,item){
                         var drow = {};
-                        drow.name = item.metadata.name ; 
-                        drow.status = item.status.phase ; 
-                        var hostip = item.status.hostIP;                     
+                        drow.name = item.metadata.name ;
+                        drow.status = item.status.phase ;
+                        var hostip = item.status.hostIP;
                         var containerip =item.status.podIP;
-			//var containerID = (item.status.containerStatuses[0].containerID).split("//") ; 
-                        //运行状态可以查看资源使用情况 cadvisitor
+                        //运行状态可以查看资源使用情况
                         if(item.status.phase == "Running"){
-                          cid =  (item.status.containerStatuses[0].containerID).split("//") ; 
+                          cid =  (item.status.containerStatuses[0].containerID).split("//") ;
                           resURL = "http://"+hostip+podstatusURI+cid[1] ;
                           //podRes
                           drow.name = "<a title=\"打开查看资源状态\" href="+resURL+">" + item.metadata.name +"<\/a>" ;
-                          //采用frame 同一页面展现
-                          //drow.name = "<a  href=javascript:setFrameSrc('"+resURL+"')>" + item.metadata.name +"<\/a>" ;
-                          consoleURL = "http://"+hostip+":21888/terminal/"+cid[1] 
-                          //consoleURL = consoleURL,'500px','400px','no')"
-                          containerip="<div onclick=openWin('"+consoleURL+"','500px','400px','no')>"+containerip+"<\/div>"
+
+                          // add container web console
+                          consoleURL = "http://"+HOSTIP+":21888/terminal/"+item.metadata.name+"/"+row.namespace ;
+                          containerip="<div onclick=openWin('"+consoleURL+"','800px','600px','no')>"+containerip+"<\/div>"
+                            //drow.name = "<a  href=javascript:setFrameSrc('"+resURL+"')>" + item.metadata.name +"<\/a>" ;
                         }
 
                         drow.starttime = item.status.startTime ;
 
                         if(item.spec.containers[0].ports != undefined ){
 
-                            var temphostip = "" ; 
+                            var temphostip = "" ;
                             var tempContain = "" ;
                             $.each(item.spec.containers[0].ports,function(j,item){
- 
+
                                 // 22 端口过滤掉
                                 if(item.containerPort == "22"){
                                         return true ; //goto next item
                                 }else{
-                                     temphostip += hostip + ":" + item.hostPort +"</br>" ; 
-                                     tempContain += containerip + ":"+ item.containerPort +"</br>"; 
+                                     temphostip += hostip + ":" + item.hostPort +"</br>" ;
+                                     tempContain += containerip + ":"+ item.containerPort +"</br>";
                                 }
                             });
-                                
+
                              if(temphostip == ""){
-                                     temphostip += hostip +"</br>" ; 
-                                     tempContain += containerip +"</br>"; 
+                                     temphostip += hostip +"</br>" ;
+                                     tempContain += containerip +"</br>";
                              }
 
                              drow.hostip  = temphostip ;
@@ -133,7 +126,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
                         }else{
                             drow.hostip  = hostip ;
-                            drow.containerip = containerip ; 
+                            drow.containerip = containerip ;
                         }
                         alldata.push(drow) ;
 
@@ -148,11 +141,92 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
             $('#dg').datagrid({
               data:alldata,
-              onClickRow:loadPodDetailByName,   
+              onClickRow:loadPodDetailByName,
             });
 
         }
-      
+
+    function loadAllPods(ns){
+        podstatusURI =  ":4194/containers/docker/";
+        alldata_pod=[];
+        api = url+getpods.replace("default",ns) ;
+        $.ajax({
+            url: api,
+            type:"get",
+            dataType:"json",
+            async:false,
+            success: function(data){
+                $.each(data.items,function(i,item){
+                    var drow = {};
+                    drow.name = item.metadata.name ;
+                    drow.status = item.status.phase ;
+                    var hostip = item.status.hostIP;
+                    var containerip =item.status.podIP;
+                    //运行状态可以查看资源使用情况
+                    if(item.status.phase == "Running"){
+                        cid =  (item.status.containerStatuses[0].containerID).split("//") ;
+                        resURL = "http://"+hostip+podstatusURI+cid[1] ;
+                        //podRes
+                        drow.name = "<a title=\"打开查看资源状态\" href="+resURL+">" + item.metadata.name +"<\/a>" ;
+
+                        // add container web console
+                        consoleURL = "http://"+HOSTIP+":21888/terminal/"+item.metadata.name+"/"+ns ;
+                        containerip="<div onclick=openWin('"+consoleURL+"','800px','600px','no')>"+containerip+"<\/div>"
+                        //drow.name = "<a  href=javascript:setFrameSrc('"+resURL+"')>" + item.metadata.name +"<\/a>" ;
+                    }
+
+                    drow.starttime = item.status.startTime ;
+
+                    if(item.spec.containers[0].ports != undefined ){
+
+                        var temphostip = "" ;
+                        var tempContain = "" ;
+                        $.each(item.spec.containers[0].ports,function(j,item){
+
+                            // 22 端口过滤掉
+                            if(item.containerPort == "22"){
+                                return true ; //goto next item
+                            }else{
+                                temphostip += hostip + ":" + item.hostPort +"</br>" ;
+                                tempContain += containerip + ":"+ item.containerPort +"</br>";
+                            }
+                        });
+
+                        if(temphostip == ""){
+                            temphostip += hostip +"</br>" ;
+                            tempContain += containerip +"</br>";
+                        }
+
+                        drow.hostip  = temphostip ;
+                        drow.containerip = tempContain ;
+
+                    }else{
+                        drow.hostip  = hostip ;
+                        drow.containerip = containerip ;
+                    }
+                    alldata_pod.push(drow) ;
+
+                });
+
+            },
+            error:function(){
+                alert("获取POD时服务器异常，请刷新页面重试!,请求地址=="+url+getpods+"?labels=name="+row.rclable);
+            }
+        });
+
+
+        $('#dg').datagrid({
+            data:alldata,
+            onClickRow:loadPodDetailByName,
+        });
+
+        $('#pod_dg').datagrid({
+            data:alldata_pod,
+            onClickRow:loadPodDetailByName,
+        });
+
+    }
+
        function loadPodDetailByName(){
 
 
@@ -163,7 +237,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
               $('#dlg').dialog('open').dialog('center').dialog('setTitle','创建一个服务');
               $('#fm').form('clear');
 
-              /**ports =  $('input[name*="cspor"]') ; 
+              /**ports =  $('input[name*="cspor"]') ;
               for (var i = 0 ; i<ports.length ; i++) {
                  ports[i].bind('blur',checkPort()) ;
               }**/
@@ -173,7 +247,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
         function GetJsonData(namespace,name,replicas,selector,image,sport,dport,commandline,args){
 
             //取得随机分配的ssh映射端口
-            var sshport = getPort() ;  
+            var sshport = getPort() ;
 
             var RC =  {
 
@@ -197,11 +271,11 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                      },
                      "spec":{
                         "volumes": [
-                                {   
+                                {
                                 "name": "nfs",
                                 "hostPath": {"path": "/mnt/nfs"}
-                                }   
-                            ],  
+                                }
+                            ],
                         "containers":[
                            {
                               "name":name,
@@ -213,14 +287,14 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                               args
                             ],**/
                               "ports": [
-                                  /**{   
+                                  /**{
                                     "hostPort": sport,
                                     "containerPort":dport, 
                                     "protocol": "TCP"
                                   },**/
-                                  {   
+                                  {
                                     "hostPort": sshport,
-                                    "containerPort":22, 
+                                    "containerPort":22,
                                     "protocol": "TCP"
                                   }
                                 ],
@@ -238,14 +312,14 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
                }
             } /*end RC */
-               
+
             return RC ;
         }
 
        function getPort(){
-          var port = 22222 ; 
+          var port = 22222 ;
           $.ajax({
-                      url: url+getport, 
+                      url: url+getport,
                       type:"get",
                       dataType:"json",
                       async:false,
@@ -257,7 +331,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                       }
           });
 
-          return port ; 
+          return port ;
 
        }
 
@@ -267,12 +341,12 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
               if(!a){
                 alert("必填项目没有填写或者值有误,请检查后重新提交!");
-                return  ; 
-              } 
+                return  ;
+              }
 
                 var name      = $("input[name='cname']").val().toLowerCase();
 
-                var regEx = new RegExp(/^(([^\^\.<>%&',;=?$"':#@!~\]\[{}\\/`\|\*\+\(\)])*)$/); 
+                var regEx = new RegExp(/^(([^\^\.<>%&',;=?$"':#@!~\]\[{}\\/`\|\*\+\(\)])*)$/);
                 if(name.match(regEx)==null){
                    alert("名称中含有非法字符");return ;
                 }
@@ -280,7 +354,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
 
                 if(!checkRCName(name)){
-                    return ; 
+                    return ;
                 }
                 //这里先采用selector = rcname的方式，不让用户自己定义selector
                 var selector  =  name ;/**$("input[name='clable']").val();**/
@@ -290,7 +364,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                 if(image == undefined || image == "" ){alert("必填项目没有填写或者值有误,请检查后重新提交!");return;}
 
                 var namespace = "default" ;
-                
+
                 var dport     = parseInt($("input[name='cdport']").val());
 
                  /**if(!checkPort(sport)){
@@ -301,17 +375,17 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
                 var sport2     = getPort();//parseInt($("input[name='csport2']").val());
                 var dport2     = parseInt($("input[name='cdport2']").val());
-                
+
                 var args     = $("input[name='cargs']").val();
 //console.log("args="+args) ;
-                var commandline = "" ; 
+                var commandline = "" ;
                 //当args有值时，commandline 才能出现
                 if( !args  == "" ) {
                 //这里预留 image 与 commdline 的映射关系
                     if(image.indexOf("mysql")) {
-                      commandline = "/root/start.sh"; 
-                      //mysql的默认参数 args = /var/lib/mysql/ 
-                    }else if(image == "redis"){ 
+                      commandline = "/root/start.sh";
+                      //mysql的默认参数 args = /var/lib/mysql/
+                    }else if(image == "redis"){
                         commandline = ""  ;
                     }
                }
@@ -329,9 +403,9 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                         "protocol": "TCP",
                     };
 
-                   RC.spec.template.spec.containers[0].ports[1] = sdport ; 
+                   RC.spec.template.spec.containers[0].ports[1] = sdport ;
                    //cachePort(sport1);
-        
+
                 }
 
                 if(  (!dport1 == "" && dport1 != 'NaN' ) ){
@@ -343,9 +417,9 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                         "protocol": "TCP",
                     };
 
-                   RC.spec.template.spec.containers[0].ports[2] = s1dport ; 
+                   RC.spec.template.spec.containers[0].ports[2] = s1dport ;
                    //cachePort(sport1);
-        
+
                 }
 
                 if(  (!dport2 == "" && dport2 != 'NaN' ) ){
@@ -360,32 +434,32 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                         "protocol": "TCP",
                     };
 
-                   RC.spec.template.spec.containers[0].ports[3] = s2dport ; 
+                   RC.spec.template.spec.containers[0].ports[3] = s2dport ;
                     //cachePort(sport2);
                 }
 
-                //动态添加进去 command 及 args   
+                //动态添加进去 command 及 args
                 if( args  != "" && commandline != "") {
                   Tempcommands =[commandline];
                   Temparg = [args];
 
-                    RC.spec.template.spec.containers[0].command = Tempcommands ; 
-                    RC.spec.template.spec.containers[0].args = Temparg ; 
+                    RC.spec.template.spec.containers[0].command = Tempcommands ;
+                    RC.spec.template.spec.containers[0].args = Temparg ;
                 }
 
 //console.log(RC.spec.template.spec.containers[0].command);
 //console.log(RC.spec.template.spec.containers[0].args) ;
 
                   $.ajax({
-                    url: url+get_rc, 
+                    url: url+get_rc,
                     type:"post",
                     dataType:"json",
                     contentType: "application/json; charset=utf-8",
-                    async:false, 
+                    async:false,
                     data: JSON.stringify(RC),
                     success: function(data){
                          alert("创建成功!");
-                         $('#dlg').dialog('close'); 
+                         $('#dlg').dialog('close');
                          loadRC();
                          $('#rc').datagrid('reload');
                     },
@@ -393,79 +467,138 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                         alert("创建RC异常!");
                     }
                 });
-                 
+
                 return RC  ;
 
             }
 
 
-        function delRC(){
+    function delRC(){
 
                 var row = $('#rc').datagrid('getSelected');
 
                 if (row){
                     $.messager.confirm('Confirm','你确定要销毁吗?',function(r){
-                      //del rc 
+                      //del rc
                         $.ajax({
                             url: url+get_rc+"/"+row.rcname,
                             type:"DELETE",
                             dataType:"json",
-                           // async:true, 
+                           // async:true,
                             success: function(data){
-                               alert("删除成功!");  
-                               loadRC(); 
+                               alert("删除成功!");
+                               loadRC();
                                 alldata = []  ;
                                  $('#dg').datagrid({
                                           data:alldata,
-                                          onClickRow:loadPodDetailByName,   
-                                });                       
+                                          onClickRow:loadPodDetailByName,
+                                });
                                $('#rc').datagrid('reload');
                             },
                             error:function(){
                                 alert("删除RC时服务器异常，请刷新页面重试!");
                             }
-                        });//del rc end 
+                        });//del rc end
 
                      });
-                     
+
                   }
         }
-           
 
-         var imgesDesc = {"dev":"ubutu14 安装有jdk1.7 resin s3 apache tomcat",
-                         "jdk1.8":"ubutu14 安装有jdk1.8",
-                          "mysql":"安装mysql 数据库",
-                           "nginx":"安装nginx服务",
-                           "redis":"安装redis服务",
-                           "memcache":"安装memcache服务",
-                           "zookeeper":"安装zookeeper服务",
-                           "noconfig":"暂未说明",
-                          }
-                            
+    var imgesDesc = {"dev":"ubutu14 安装有jdk1.7 resin s3 apache tomcat",
+                     "jdk1.8":"ubutu14 安装有jdk1.8",
+                      "mysql":"安装mysql 数据库",
+                       "nginx":"安装nginx服务",
+                       "redis":"安装redis服务",
+                       "memcache":"安装memcache服务",
+                       "zookeeper":"安装zookeeper服务",
+                       "noconfig":"暂未说明",
+                      }
 
+    //存储server 返回的rc json ，去除多余的server端状态信息，创建时间等信息
+    var RC_JOSN=[] ;
+    function getRC_JSON(response_json) {
+        rc_obj={} ;
+        //add  attribute
+        response_json.kind = "ReplicationController" ;
+        response_json.apiVersion = "v1" ;
 
-        function loadRC(){
+        //del attribute
+        delete response_json.metadata.creationTimestamp;
+        delete response_json.metadata.generation;
+        delete response_json.metadata.resourceVersion;
+        delete response_json.metadata.selfLink ;
+        delete response_json.metadata.uid;
+
+        delete response_json.spec.template.metadata.creationTimestamp;
+        delete response_json.spec.template.spec.containers[0].terminationMessagePath;
+        delete response_json.spec.template.spec.containers[0].terminationMessagePolicy;
+
+        delete response_json.spec.template.spec.schedulerName ;
+        delete response_json.spec.template.spec.dnsPolicy ;
+        delete response_json.spec.template.spec.securityContext ;
+        delete response_json.spec.template.spec.terminationGracePeriodSeconds ;
+//        delete response_json.spec.template.spec.terminationGracePeriodSeconds ;
+        delete response_json.status ;
+
+        rc_obj.rcname = response_json.metadata.name;
+        rc_obj.json=response_json ;
+        //get current replicas
+        rc_obj.replicas=response_json.spec.replicas ;
+        rc_obj.namespace = response_json.metadata.namespace ;
+
+        RC_JOSN.push(rc_obj) ;
+//        console.log(response_json) ;
+
+//        $.each(response_json.spec.template.spec.containers,function(i,item){
+//            console.log(item.image);
+//        })
+    }
+
+    //scaleUP RC
+    // +1
+    function addRC_Number(rc_json) {
+//        console.log(rc_json.json.spec.replicas)
+
+        rc_json.json.spec.replicas =   parseInt(rc_json.replicas)+ 1 ;
+        api = url +  get_rc.replace("default",rc_json.namespace) + "/" + rc_json.rcname;
+
+        $.ajax({
+            url: api,
+            type:"put",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(rc_json.json),
+            dataType:"json",
+            async:false,
+            success: function(data){
+                    console.log(data) ;
+            },
+            error:function(){
+                alert("scale UP 时服务器异常!");
+            }
+        });
+
+    }
+
+    function loadRC(namespace){
             rc_data = [] ;
-            $.ajax({ 
-                url: url+get_rc, 
+            api = url +  get_rc.replace("default",namespace);
+
+            $.ajax({
+                url: api,
                 type:"get",
                 dataType:"json",
-                async:false, 
+                async:false,
                 success: function(data){
 
                     $.each(data.items,function(i,item){
+                        getRC_JSON(item);
                         var drow = {};
-                        drow.rcname = item.metadata.name ; 
-                        drow.rcnum = item.spec.replicas ; 
+                        drow.rcname = item.metadata.name ;
+                        drow.rcnum = item.spec.replicas ;
                         drow.rclable = item.metadata.labels.name ;
+                        drow.namespace = namespace;
 
-                        /**
-                        if(imgesDesc[item.metadata.name] == undefined) {
-                            drow.rcimage = "暂未说明" ; 
-                        }else{
-                            drow.rcimage = imgesDesc[item.metadata.name]  ;
-                        }**/
-      
                         $.each(item.spec.template.spec.containers,function(j,item){
                              imgesDescDetail = "" ;
                             if(item.image.indexOf("apache-tomcat7") != -1){
@@ -486,7 +619,7 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                               imgesDescDetail = "noconfig" ;
                             }
 
-                            drow.rcimage = imgesDesc[imgesDescDetail]; 
+                            drow.rcimage = imgesDesc[imgesDescDetail];
 
                         });
 
@@ -497,7 +630,28 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
 
                     $('#rc').datagrid({
                           data:rc_data,
-                          onClickRow:loadPodByLable,                    
+                          onDblClickRow:loadPodByLable,
+//                          onClickRow:loadPodByLable,
+
+                        //单元格点击事件
+                         onClickCell:function(index,field,value){
+                              //只针对这一列做更新
+                            if(field == 'scaleUP'){
+//                                $(this).datagrid('getSelected');
+                                var rows = $(this).datagrid('getRows');
+                                //获取点击的行
+                                var row = rows[index];
+                                //get rcname
+                                rcname=row.rcname  ;
+
+                                //RC_JOSN.find(findRC_name())
+                                var result = $.grep(RC_JOSN, function(obj){ return obj.rcname == rcname; });
+//                                console.log(result)
+                                console.log(result[0].json);
+                                addRC_Number(result[0])
+
+                            }
+                        }
                          });
 
                 },
@@ -505,102 +659,140 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
                     alert("请求RC时服务器异常!");
                 }
             });
+
+        console.log(RC_JOSN);
+
+
+    }
+
+    function getResource(namespace){
+        loadRC(namespace);
+        loadAllPods(namespace);
+    }
+
+    /*检查port 是否已经使用 false:使用    true:没有使用*/
+    function checkPort(sport){
+
+        /**var strPort = hasPort.join(",");
+        if(strPort.indexOf(sport) != -1 ) {
+            alert(sport+" 已使用,请更换端口.");
+            return false;
         }
- 
-        /*检查port 是否已经使用 false:使用    true:没有使用*/
-        function checkPort(sport){
+        **/
+        //可以使用
+        var flag = true ;
 
-            /**var strPort = hasPort.join(",");       
-            if(strPort.indexOf(sport) != -1 ) {
-                alert(sport+" 已使用,请更换端口.");
-                return false;
-            }
-            **/
-            //可以使用
-            var flag = true ; 
-
-              $.ajax({
-                    url: url+getport+sport, 
-                    type:"get",
-                    success: function(data){
-                        //alert(data);
-                        if(data == "True") {
-                            flag = false ; 
-                        }
-                    },
-                    error:function(){
-                        alert("检查端口是否占用失败!"+ (url+getport+sport));
+          $.ajax({
+                url: url+getport+sport,
+                type:"get",
+                success: function(data){
+                    //alert(data);
+                    if(data == "True") {
+                        flag = false ;
                     }
-                });
+                },
+                error:function(){
+                    alert("检查端口是否占用失败!"+ (url+getport+sport));
+                }
+            });
 
 
-            return flag ;
-           
-       }
+        return flag ;
 
-       //检查名称是否已使用
-       function checkRCName(rcname){
-            var flag = true ; 
-            $.each(rc_data,function(i,data){
-                 if(data.rcname == rcname){
-                     alert("服务名称 【"+ rcname +"】 已使用,请更换名称.");
-                     flag = false ; 
-                     return false;
-                 }
-            })
-            return flag ;
-       }
+   }
 
-        function addPort(){
-            var fm  = $("#port") ;
-            $('<div/>',{ 
-            id:'test1', 
-            "class":"fitem", 
-            }).appendTo(fm); 
-         
-            $("<span class=\"textbox textbox-invalid numberbox\" style=\"width: 68px; height: 20px;margin-left: 82px;\"><input name=\"csport\" class=\"textbox-text validatebox-text textbox-prompt validatebox-invalid\"  min=\"1024\" max=\"65535\" required style=\"width: 60px;border-color: #ffa8a8;\"></span> : <span class=\"textbox textbox-invalid numberbox\" style=\"width: 68px; height: 20px;\"><input name=\"cdport\" class=\"textbox-text validatebox-text textbox-prompt validatebox-invalid\"   min=\"1\" max=\"65535\" required style=\"width: 60px\"></span><br>").appendTo($("#test1"));
-            
-        }
+   //检查名称是否已使用
+   function checkRCName(rcname){
+        var flag = true ;
+        $.each(rc_data,function(i,data){
+             if(data.rcname == rcname){
+                 alert("服务名称 【"+ rcname +"】 已使用,请更换名称.");
+                 flag = false ;
+                 return false;
+             }
+        })
+        return flag ;
+   }
 
+    function addPort(){
+        var fm  = $("#port") ;
+        $('<div/>',{
+        id:'test1',
+        "class":"fitem",
+        }).appendTo(fm);
+
+        $("<span class=\"textbox textbox-invalid numberbox\" style=\"width: 68px; height: 20px;margin-left: 82px;\"><input name=\"csport\" class=\"textbox-text validatebox-text textbox-prompt validatebox-invalid\"  min=\"1024\" max=\"65535\" required style=\"width: 60px;border-color: #ffa8a8;\"></span> : <span class=\"textbox textbox-invalid numberbox\" style=\"width: 68px; height: 20px;\"><input name=\"cdport\" class=\"textbox-text validatebox-text textbox-prompt validatebox-invalid\"   min=\"1\" max=\"65535\" required style=\"width: 60px\"></span><br>").appendTo($("#test1"));
+
+    }
+
+    function  getNamespace() {
+        $.ajax({
+            url: url+get_namespaces,
+            type:"get",
+            dataType:"json",
+            async:false,
+            success: function(data) {
+
+                $.each(data.items,function (i,item) {
+                    console.log(item.metadata.name);
+                    add_namespace='<span style="width:80px;padding-left: 10px;padding-right: 10px;margin-top: 10px;margin-right:5px;background: yellowgreen" onclick="getResource(this.innerHTML)">'+item.metadata.name+'</span>' ;
+                    $("#namespace").append(add_namespace) ;
+                })
+
+            },
+            error:function(){
+                alert("请求Namespace时服务器异常!");
+            }
+            });
+
+    }
+
+    function openWin(src, width, height, showScroll){
+
+        var iWidth = width;
+        var iHeight = height;
+        var iTop = (window.screen.availHeight - 30 - iHeight) / 2;
+        var iLeft = (window.screen.availWidth - 10 - iWidth) / 2;
+        var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight + ",top=" + iTop + ",left=" + iLeft + ",toolbar=no, menubar=no, scrollbars=no, resizable=no,location=no, status=no,alwaysRaised=yes,depended=yes");
+
+    }
 
     </script>
     <script type="text/javascript">
-    //default ns
-    //var ns_     = "default"
-    var ns_     = "test-vision"
-    //var ns_     = "image-server"
-    var url     = "http://172.30.80.127:6800" ;
-    //var url     = "http://10.7.0.1:6800" ;
-	    
-    //var get_rc  = "/api/v1/namespaces/image-server/replicationcontrollers"
-   
-    
-    var get_rc  = "/api/v1/namespaces/"+ns_+"/replicationcontrollers" 
+
+    var  HOSTIP='172.30.80.23';  //docker-tty-proxy  address ;
+
+    var ns_     = "default"
+//    var url     = "http://172.30.80.107:8081" ;
+    // var url     = "http://172.30.80.45:8080" ;
+//     var url     = "http://10.7.0.1:8080" ;
+    var url     = "http://172.30.80.38:6800" ;
+    var get_rc   = "/api/v1/namespaces/"+ns_+"/replicationcontrollers" ;
     var getpods = "/api/v1/namespaces/"+ns_+"/pods" ;
     var getport = "/api/v1/ports/";
-    //rc data var 
+
+    var get_namespaces="/api/v1/namespaces/" ;
+    //rc data var
     var rc_data=[];
 
     function changeArgs(value){
       $("#cargs").val(value) ;
     }
 
-
     $(function(){
-        loadRC();
+
+        getNamespace() ;
+//        loadRC();
         // 加载端口占用缓存
         //checkP();
-    }); 
-                
-    </script>           
-    
+    });
+
+    </script>
+
 </head>
 <body>
-     <!--k8s 自带dashboard地址 -->
-    <div><h2>服务列表 <p><a href="http://xxxx:8001/static/app/#/dashboard/">查看节点资源使用情况</a></p></h2></div>
-    <div><a href="#" onclick="openWin('http://172.30.80.215:21888/terminal/65640d338bfa','500px','400px','no')">GoRemoteConsole</a></div>
-    <div><a href="#" onclick="openWin('http://172.30.80.127:21888/terminal/56523078caee','600px','500px','no')">GoRemoteConsole2</a></div>
-
+    <div><h2>Admin Service list <p><a href="http://172.30.10.185:8001/#/dashboard/">查看节点资源使用情况</a></p></h2></div>
+    <div id="namespace"></div>
     <table id="rc" title="服务情况" class="easyui-datagrid" style="width:800px;height:400px"
             url=""
             toolbar="#rctoolbar" pagination="false"
@@ -609,7 +801,11 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
             <tr>
                 <th field="rcname" width="80">服务名称</th>
                 <th field="rcnum" width="30" align="center">服务数量</th>
-                <th field="rcimage" width="260" >模板说明</th>
+                <th field="rcimage" width="260" >服务说明</th>
+                <th field="scaleUP" width="30"  >sacleUP</th>
+
+                <th field="namespace" width="0"  hidden="true"></th>
+
                 <!--th field="rclable" width="60">标签</th-->
             </tr>
         </thead>
@@ -637,7 +833,25 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
             </tr>
         </thead>
     </table>
-  
+
+    <div style="float: right;margin-top: -520px;">
+        <table id="pod_dg" title="ALL实例情况" class="easyui-datagrid" style="width:850px;height:500px"
+               url=""
+
+               toolbar="#toolbar" pagination="false"
+               rownumbers="true" fitColumns="true" singleSelect="true">
+            <thead>
+            <tr>
+                <th field="name" width="120">名称</th>
+                <th field="status" width="40" align="center">状态</th>
+                <th field="hostip" width="100" align="center">主机IP:源端口</th>
+                <th field="containerip" width="100" align="center">实例IP:目标端口</th>
+                <th field="starttime" width="90">运行时间</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+
     <div id="toolbar">
         <!--a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newUser()">新建容器</a-->
     </div>
@@ -662,13 +876,13 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
             <div>
             	 <label>模板<span style="color: red">*</span></label>           
                  		<div style="margin-left: 70px">
-                        <input type="radio" onchange="changeArgs('')" name="cimage"  value="ali.repo.ndp.com:5000/paas/zookeeper:3.4.6"><span>zookeeper</span><br/>
-                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="ali.repo.ndp.com:5000/paas/memcached"><span>memecache</span><br/>
-                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="ali.repo.ndp.com:5000/paas/ubuntu14-dev-jdk1.7-redis"><span>redis</span><br/>
-                        <input type="radio"  onchange="changeArgs('/var/lib/mysql/')" name="cimage" value="ali.repo.ndp.com:5000/paas/ubuntu14-dev-mysql"><span>mysql</span><br/> 
-                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="ali.repo.ndp.com:5000/paas/ubuntu14-dev-nginx"><span>nginx</span><br/>
-                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="ali.repo.ndp.com:5000/paas/ubuntu14-dev-jdk1.7-resin-s3-apache-tomcat7"><span>dev</span><br/>
-                         <input type="radio"  onchange="changeArgs('')" name="cimage" value="ali.repo.ndp.com:5000/paas/ubuntu14-jdk:1.8"><span>jdk1.8</span><br/>
+                        <input type="radio" onchange="changeArgs('')" name="cimage"  value="172.30.10.185:5000/paas/zookeeper:3.4.6"><span>zookeeper</span><br/>
+                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="172.30.10.185:5000/paas/memcached"><span>memecache</span><br/>
+                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-jdk1.7-redis"><span>redis</span><br/>
+                        <input type="radio"  onchange="changeArgs('/var/lib/mysql/')" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-mysql"><span>mysql</span><br/> 
+                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-nginx"><span>nginx</span><br/>
+                        <input type="radio"  onchange="changeArgs('')" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-dev-jdk1.7-resin-s3-apache-tomcat7"><span>dev</span><br/>
+                         <input type="radio"  onchange="changeArgs('')" name="cimage" value="172.30.10.185:5000/paas/ubuntu14-jdk:1.8"><span>jdk1.8</span><br/>
                         </div>
             </div>
 
@@ -719,9 +933,9 @@ var win = window.open(src,"console", "width=" + iWidth + ", height=" + iHeight +
         <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg').dialog('close')" style="width:90px">取消</a>
     </div>
   
-    <div style="float: right; margin-top: -520px">
+    <!--div style="float: right; margin-top: -520px">
     <iframe id="podRes" width="600px" height="800px" scrolling="auto"  frameborder="0"/> 
-    </div>
+    </div-->
     <style type="text/css">
         #fm{
             margin:0;
