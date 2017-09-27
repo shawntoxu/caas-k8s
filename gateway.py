@@ -10,6 +10,7 @@ import sys
 import time
 import datetime
 import requests
+import util 
 
 app = Flask(__name__)
 
@@ -18,7 +19,7 @@ app = Flask(__name__)
 NAMESPACE='test-vision'
 
 SERVER='10.2.33.10'
-#SERVER='54.169.163.160'
+#SERVER='172.30.10.122'
 #SERVER='172.30.80.23'
 SERVER_URL='http://%s:8080'
 list_namespaces='/api/v1/namespaces/'
@@ -27,6 +28,9 @@ out_pod_url='/api/v1/namespaces/<namespace>/pods'
 rc_name_url='/api/v1/namespaces/<namespace>/replicationcontrollers/<rc_name>'
 port_url='/api/v1/ports/'
 is_port_url='/api/v1/ports/<int:port>'
+
+
+
 
 
 
@@ -98,7 +102,15 @@ def resent_req(url,method):
     #print json.dumps(strj,indent=4)
     if r.status_code == 200 or r.status_code == 201 \
         or r.status_code == 204 or r.status_code == 202:
-        return json.dumps(strj,indent=4)
+        if url.find('pods') != -1:
+            for pod in strj['items']:
+                #for container in pod['spec']['metadata']:
+                #print util.getAge(pod['status']['startTime'])
+                pod['metadata']['age'] = util.getAge(pod['status']['startTime'])
+                #print pod['metadata']['creationTimestamp']
+            return json.dumps(strj,indent=4)
+        else: 
+            return json.dumps(strj,indent=4)
     else:
         print json.dumps(strj,indent=4)
 
@@ -236,4 +248,4 @@ def get_pod(namespace=None):
 if __name__ == '__main__':
     load_ports()
     #app.run(host='0.0.0.0',port=8100,debug=True)
-    app.run(host='0.0.0.0',port=6800,debug=True)
+    app.run(host='0.0.0.0',port=6811,debug=True)

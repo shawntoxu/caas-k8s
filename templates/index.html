@@ -94,7 +94,7 @@
                           drow.name = "<a title=\"打开查看资源状态\" href="+resURL+">" + item.metadata.name +"<\/a>" ;
 
                           // add container web console
-                          consoleURL = "http://"+HOSTIP+":21888/terminal/"+item.metadata.name+"/"+row.namespace ;
+                          consoleURL = "http://"+HOSTIP+":21999/terminal/"+item.metadata.name+"/"+row.namespace ;
                           containerip="<div onclick=openWin('"+consoleURL+"','800px','600px','no')>"+containerip+"<\/div>"
                             //drow.name = "<a  href=javascript:setFrameSrc('"+resURL+"')>" + item.metadata.name +"<\/a>" ;
                         }
@@ -162,6 +162,10 @@
                     drow.status = item.status.phase ;
                     var hostip = item.status.hostIP;
                     var containerip =item.status.podIP;
+
+                    //自计算运行时间
+                    drow.age = item.metadata.age;
+
                     //运行状态可以查看资源使用情况
                     if(item.status.phase == "Running"){
                         cid =  (item.status.containerStatuses[0].containerID).split("//") ;
@@ -170,7 +174,7 @@
                         drow.name = "<a title=\"打开查看资源状态\" href="+resURL+">" + item.metadata.name +"<\/a>" ;
 
                         // add container web console
-                        consoleURL = "http://"+HOSTIP+":21888/terminal/"+item.metadata.name+"/"+ns ;
+                        consoleURL = "http://"+HOSTIP+":21999/terminal/"+item.metadata.name+"/"+ns ;
                         containerip="<div onclick=openWin('"+consoleURL+"','800px','600px','no')>"+containerip+"<\/div>"
                         //drow.name = "<a  href=javascript:setFrameSrc('"+resURL+"')>" + item.metadata.name +"<\/a>" ;
                     }
@@ -766,7 +770,7 @@
 //    var url     = "http://172.30.80.107:8081" ;
     // var url     = "http://172.30.80.45:8080" ;
 //     var url     = "http://10.7.0.1:8080" ;
-    var url     = "http://172.30.80.38:6800" ;
+    var url     = "http://172.30.80.38:6811" ;
     var get_rc   = "/api/v1/namespaces/"+ns_+"/replicationcontrollers" ;
     var getpods = "/api/v1/namespaces/"+ns_+"/pods" ;
     var getport = "/api/v1/ports/";
@@ -846,7 +850,9 @@
                 <th field="status" width="40" align="center">状态</th>
                 <th field="hostip" width="100" align="center">主机IP:源端口</th>
                 <th field="containerip" width="100" align="center">实例IP:目标端口</th>
-                <th field="starttime" width="90">运行时间</th>
+                <th field="age" width="40" align="left">运行时间</th>
+
+                <th field="starttime" width="40">启动时间</th>
             </tr>
             </thead>
         </table>
