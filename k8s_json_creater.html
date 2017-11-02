@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script
+  src="https://code.jquery.com/jquery-2.2.4.min.js"
+  integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+  crossorigin="anonymous"></script>
+  
+  
+    <style type="text/css">
+        input{
+            width: 220px;
+        }
+
+    </style>
+
+    <script  language="JavaScript">
+        /**
+         a simple k8s json creater by html 
+         by comwangxu@gmail.com 
+    **/
+     function getTemp() {
+
+     console.log('----------------------------------');
+
+     APIVERION="v1";
+     NAMESPACE="default";
+     if(!getNamespace()) return ;
+     NAMESPACE=getNamespace();
+
+     if(!getAttribute('rc_name')) return ;
+     RC_NAME=getAttribute('rc_name');
+
+     if(!getAttribute('replicas_num')) return ;
+     REPLICAS_NUM=parseInt(getAttribute('replicas_num'));
+
+
+     if(!getAttribute('image_name')) return ;
+     IMAGE_NAME=getAttribute('image_name');
+
+
+     if(!getAttribute('image_version')) return ;
+     IMAGE_VERSION=getAttribute('image_version');
+
+     if(!getAttribute('docker_hub')) return ;
+     DOCKERHUB=getAttribute('docker_hub');
+//     DOCKERHUB="xa.repo.ndp.com:5000/test_project/";
+
+     IMAGE=DOCKERHUB+IMAGE_NAME+":"+IMAGE_VERSION ;
+
+     HOST_LOG_PATH_PRE="/log/" ;
+     HOST_LOG_PATH=HOST_LOG_PATH_PRE+RC_NAME ;
+
+     if(!getAttribute('mount_path')) return ;
+     MOUNT_PATH=getAttribute('mount_path');
+
+     if(!getAttribute('memory_request')) return ;
+     MEMORY_REQUEST=getAttribute('memory_request');
+
+     if(!getAttribute('memory_limit')) return ;
+     MEMORY_LIMIT=getAttribute('memory_limit');
+
+     if(!getAttribute('readiness')) return ;
+     READINESS=getAttribute('readiness');
+
+     if(!getAttribute('lifecycle')) return ;
+     LIFECYCLE=getAttribute('lifecycle');
+/*
+     READINESS="/app/readiness.sh";
+     LIFECYCLE="/app/prestop.sh";*/
+
+     //add env if input has
+     rc_temp={
+     "kind": "ReplicationController",
+         "apiVersion": APIVERION,
+         "metadata": {
+         "namespace": NAMESPACE,
+             "name": RC_NAME,
+             "labels": {
+             "name": RC_NAME,
+                 "version": IMAGE_VERSION,
+                 "internalID" : "111"
+         }
+     },
+     "spec": {
+         "replicas": REPLICAS_NUM,
+             "selector": {
+             "name": RC_NAME,
+                 "version": IMAGE_VERSION,
+                 "internalID" : "111"
+         },
+         "template": {
+             "metadata": {
+                 "namespace": NAMESPACE,
+                     "labels": {
+                     "name": RC_NAME,
+                         "version": IMAGE_VERSION,
+                         "internalID" : "111"
+                 }
+             },
+             "spec": {
+                 "volumes": [
+                     {
+                         "name": "host-log",
+                         "hostPath": {"path": HOST_LOG_PATH }
+                     }
+                 ],
+                     "containers": [
+                     {
+                         "name": RC_NAME,
+                         "image": IMAGE,
+                         "volumeMounts": [
+                             {
+                                 "name": "host-log",
+                                 "mountPath": MOUNT_PATH
+                             }
+                         ],
+                         "resources": {
+                             "limits": {
+                                 "memory": MEMORY_LIMIT
+                             },
+                             "requests": {
+                                 "memory": MEMORY_REQUEST
+                             }
+                         },
+                         "env": [
+                             {
+                                 "name": "LC_ALL",
+                                 "value": "en_US.UTF-8"
+                             },
+                             {
+                                 "name": "LANG",
+                                 "value": "en_US.UTF-8"
+                             },
+                             {
+                                 "name": "LANGUAGE",
+                                 "value": "en_US:en"
+                             }
+                         ],
+                         "readinessProbe": {
+                             "initialDelaySeconds": 3,
+                             "exec": {
+                                 "command": [
+                                     "bash",
+                                      "-c",
+                                      READINESS
+                                 ]
+                             }
+                         },
+                         "lifecycle": {
+                             "preStop": {
+                                 "exec": {
+                                     "command": [
+                                         LIFECYCLE
+                                     ]
+                                 }
+                             }
+                         }
+                     }
+                 ]
+                 /**
+                 ,"nodeSelector": {
+                     "usergroup": "ttt"
+                 }
+                **/
+             }
+         }
+     }
+     } //end rc temp
+//     console.log(rc_temp);
+     console.log('----------------------------------');
+
+     return rc_temp ;
+
+     }
+
+
+     function crateRC() {
+         if(!getTemp()) return  ;
+         this_rc=getTemp();
+         // add env
+         env_arr=$("input[id^='env_name']");
+         if(env_arr.length  > 0 ){
+            for(var i=0;i<env_arr.length;i++){
+//                console.log($("#env_name"+i).val().trim() + "=" + $("#env_value"+i).val().trim());
+                env_obj = {
+                    "name":$("#env_name"+i).val().trim(),
+                    "value":$("#env_value"+i).val().trim()
+                }
+                //console.log(rc_temp.spec.template.spec.containers[0].env);
+                this_rc.spec.template.spec.containers[0].env.push(env_obj);
+            }
+//             console.log(env_obj.name + "=" + env_obj.value);
+         }
+
+         // add nodeSelector
+         if(getNodeSelector() != "NONE"){
+             this_rc.spec.template.spec.nodeSelector=getNodeSelector();
+         }
+
+//        document.wirte(rc_temp);
+         console.log(JSON.stringify(this_rc));
+
+         $("#json").val(JSON.stringify(this_rc)) ;
+         // add nodeSelector
+     }
+
+     function getAttribute(attr) {
+//         console.log('get '+ attr);
+         val=$("#"+attr).val();
+         if(val === "" ){
+             alert(attr+'必须填写 ！') ;return false ;
+         }else{
+             return val  ;
+         }
+
+     }
+
+     function getNamespace() {
+         namespace=$("#namespace").val().trim() ;
+         if(namespace === "" ){
+             alert('namespace 必须填写 ！') ;return false ;
+         }else{
+             return namespace  ;
+         }
+     }
+
+     function getNodeSelector() {
+         name=$("#node_selector_key").val().trim() ;
+         val=$("#node_selector_val").val().trim() ;
+         nodeSelector={
+             name: val
+         };
+
+         if(name != "" &&　val != "" ) {
+             return  nodeSelector  ;
+         }else{
+             return "NONE"  ;
+         }
+
+     }
+
+     function moreEnv() {
+         input=document.createElement("input");
+         input.type = "text" ;
+         input.id = "env_name1" ;
+
+         //取得已经存在的env
+         current_env=$("input[id^='env_name']");
+         len=current_env.length;
+         env_name_t="env_name" + len ;
+         env_value_t="env_value" + len ;
+
+         $("#env").append('</br><input id='+env_name_t+' type="text"  align="center">=<input id='+env_value_t+' type="text">');
+
+//         console.log($("html").html());
+
+     }
+     
+    </script>
+
+</head>
+<body>
+<form>
+    <div>
+        namespace:<input id="namespace" type="text" value="default" >
+    </div>
+    <div>
+        rc_name:<input id="rc_name" type="text" value="testrc" >
+    </div>
+    <div>
+        replicas_num:<input id="replicas_num" type="text" value="1">
+    </div>
+    <div>
+        image_name:<input id="image_name" type="text" value="nginx">
+    </div>
+    <div>
+        image_version:<input id="image_version" type="text" value="1.0">
+    </div>
+    <div>
+        docker_hub:<input id="docker_hub" type="text" value="xa.repo.ndp.com:5000/test_project/">
+    </div>
+    <div>
+        mount_path:<input id="mount_path" type="text" value="/app/logs">
+    </div>
+    <div>
+        memory_request:<input id="memory_request" type="text" value="512Mi">
+    </div>
+    <div>
+        memory_limit:<input id="memory_limit" type="text" value="1Gi">
+    </div>
+    <div>
+        readiness:<input id="readiness" type="text" value="/dianyi/app/ypp/readiness.sh">
+    </div>
+    <div>
+        lifecycle:<input id="lifecycle" type="text" value="/dianyi/app/ypp/prestop.sh">
+    </div>
+
+    <div>
+        Node-Selector:<input id="node_selector_key" type="text" >=<input id="node_selector_val" type="text">
+    </div>
+    <div id="env">
+    env:<input id="env_name0" type="text" >=<input id="env_value0" type="text">
+    <input type="button" onclick="crateRC()" value="GO">
+    <input type="button" onclick="moreEnv()" value="+">
+    </div>
+    <div>
+        <div>result:</div>
+        <textarea id="json" style="width: 600px; height: 400px;"></textarea>
+
+    </div>
+</form>
+</body>
+</html>
