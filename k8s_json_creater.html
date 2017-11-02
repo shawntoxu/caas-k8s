@@ -281,7 +281,7 @@
         image_version:<input id="image_version" type="text" value="1.0">
     </div>
     <div>
-        docker_hub:<input id="docker_hub" type="text" value="xa.repo.ndp.com:5000/test_project/">
+        docker_hub:<input id="docker_hub" type="text" value="test.registry.com:5000/test_project/">
     </div>
     <div>
         mount_path:<input id="mount_path" type="text" value="/app/logs">
@@ -293,10 +293,10 @@
         memory_limit:<input id="memory_limit" type="text" value="1Gi">
     </div>
     <div>
-        readiness:<input id="readiness" type="text" value="/dianyi/app/ypp/readiness.sh">
+        readiness:<input id="readiness" type="text" value="/app/readiness.sh">
     </div>
     <div>
-        lifecycle:<input id="lifecycle" type="text" value="/dianyi/app/ypp/prestop.sh">
+        lifecycle:<input id="lifecycle" type="text" value="/app/prestop.sh">
     </div>
 
     <div>
@@ -305,7 +305,7 @@
     <div id="env">
     env:<input id="env_name0" type="text" >=<input id="env_value0" type="text">
     <input type="button" onclick="crateRC()" value="GO">
-    <input type="button" onclick="moreEnv()" value="+">
+    <input type="button" onclick="moreEnv()" value="add ENV">
     </div>
     <div>
         <div>result:</div>
